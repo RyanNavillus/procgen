@@ -555,9 +555,12 @@ class CVecEnv:
         """
         Seed the environment, this isn't used by VecEnvs but is part of the Gym Env API
         """
+        if isinstance(seed, tuple):
+            seed, env_idx = seed
         self.reset_start_level(seed, env_idx)
 
     def reset_start_level(self, level_seed, env_idx=-1, env_name=''):
+        assert env_idx >= 0, "env_idx must be at least 0"
         env_name = env_name.encode('ascii')
         self._c_lib.libenv_reset_start_level(self._c_env, level_seed, env_idx, env_name)
 
@@ -565,6 +568,7 @@ class CVecEnv:
         """
         Reset the environment and return the first observation
         """
+        assert env_idx >= 0, "env_idx must be at least 0"
         env_name = env_name.encode('ascii')
         self._state = STATE_WAIT_ACT
 
