@@ -178,6 +178,7 @@ VecGame::VecGame(int _nenvs, VecOptions opts) {
 
     int rand_seed = 0;
     int num_threads = 4;
+    int timeout = 1000;
     std::string resource_root;
 
     opts.consume_string("env_name", &env_name);
@@ -186,6 +187,7 @@ VecGame::VecGame(int _nenvs, VecOptions opts) {
     opts.consume_int("num_actions", &num_actions);
     opts.consume_int("rand_seed", &rand_seed);
     opts.consume_int("num_threads", &num_threads);
+    opts.consume_int("timeout", &timeout);
     opts.consume_string("resource_root", &resource_root);
     opts.consume_bool("render_human", &render_human);
 
@@ -318,6 +320,7 @@ VecGame::VecGame(int _nenvs, VecOptions opts) {
         games[n]->is_waiting_for_step = false;
         games[n]->parse_options(name, opts);
         games[n]->info_name_to_offset = info_name_to_offset;
+	games[n]->timeout = timeout;
 
         // Auto-selected a fixed_asset_seed if one wasn't specified on
         // construction
