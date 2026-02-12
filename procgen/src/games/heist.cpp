@@ -221,6 +221,18 @@ class HeistGame : public BasicAbstractGame {
         world_dim = b->read_int();
         has_keys = b->read_vector_bool();
     }
+
+    void observe() override {
+        Game::observe();
+        int32_t key_count = 0;
+        for (const auto& has_key : has_keys) {
+            if (has_key) {
+                key_count++;
+            }
+        }
+        *(int32_t *)(info_bufs[info_name_to_offset.at("heist_key_count")]) = key_count;
+        *(int32_t *)(info_bufs[info_name_to_offset.at("heist_key_total")]) = num_keys;
+    }
 };
 
 REGISTER_GAME(NAME, HeistGame);
