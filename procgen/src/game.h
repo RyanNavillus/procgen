@@ -83,6 +83,8 @@ class Game {
 
     int current_level_seed = 0;
     int prev_level_seed = 0;
+    bool has_pending_level_seed = false;
+    int pending_level_seed = 0;
     int episodes_remaining = 0;
     bool episode_done = false;
 

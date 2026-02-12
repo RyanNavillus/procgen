@@ -479,4 +479,34 @@ extern "C" {
         // next time VecGame::observe() is called, the correct data will be in the buffers
         venv->games.at(env_idx)->observe();
     }
+
+    LIBENV_API void set_level_seed(libenv_env *handle, int env_idx, int level_seed, int force_reset) {
+        auto venv = (VecGame *)(handle);
+        venv->wait_for_stepping_threads();
+
+        auto apply_seed = [&](std::shared_ptr<Game> &game) {
+            game->pending_level_seed = level_seed;
+            game->has_pending_level_seed = true;
+
+            if (force_reset) {
+                game->episodes_remaining = 0;
+                game->step_data.reward = 0;
+                game->step_data.done = true;
+                game->step_data.level_complete = false;
+                game->episode_done = true;
+                game->reset();
+                game->observe();
+                game->initial_reset_complete = true;
+            }
+        };
+
+        if (env_idx < 0) {
+            for (int e = 0; e < venv->num_envs; e++) {
+                apply_seed(venv->games.at(e));
+            }
+        } else {
+            fassert(env_idx >= 0 && env_idx < venv->num_envs);
+            apply_seed(venv->games.at(env_idx));
+        }
+    }
 }

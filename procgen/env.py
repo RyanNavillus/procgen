@@ -82,7 +82,7 @@ class BaseProcgenEnv(CEnv):
         resource_root=None,
         num_threads=4,
         render_mode=None,
-	timeout=1000,
+        timeout=1000,
     ):
         if resource_root is None:
             resource_root = os.path.join(SCRIPT_DIR, "data", "assets") + os.sep
@@ -90,12 +90,13 @@ class BaseProcgenEnv(CEnv):
 
         lib_dir = os.path.join(SCRIPT_DIR, "data", "prebuilt")
         if os.path.exists(lib_dir):
-            assert any([os.path.exists(os.path.join(lib_dir, name)) for name in ["libenv.so", "libenv.dylib", "env.dll"]]), "package is installed, but the prebuilt environment library is missing"
+            assert any([os.path.exists(os.path.join(lib_dir, name)) for name in ["libenv.so", "libenv.dylib",
+                       "env.dll"]]), "package is installed, but the prebuilt environment library is missing"
             assert not debug, "debug has no effect for pre-compiled library"
         else:
             # only compile if we don't find a pre-built binary
             lib_dir = build(debug=debug)
-        
+
         self.combos = self.get_combos()
 
         if render_mode is None:
@@ -121,7 +122,7 @@ class BaseProcgenEnv(CEnv):
                 "render_human": render_human,
                 # these will only be used the first time an environment is created in a process
                 "resource_root": resource_root,
-		"timeout": timeout,
+                "timeout": timeout,
             }
         )
 
@@ -134,6 +135,7 @@ class BaseProcgenEnv(CEnv):
             c_func_defs=[
                 "int get_state(libenv_env *, int, char *, int);",
                 "void set_state(libenv_env *, int, char *, int);",
+                "void set_level_seed(libenv_env *, int, int, int);",
             ],
         )
         # don't use the dict space for actions
@@ -153,6 +155,24 @@ class BaseProcgenEnv(CEnv):
         for env_idx in range(self.num):
             state = states[env_idx]
             self.call_c_func("set_state", env_idx, state, len(state))
+
+    def set_seed(self, seed, env_idx: Optional[int] = None, reset: bool = False):
+        if seed is None:
+            return
+        if isinstance(seed, (list, tuple, np.ndarray)):
+            if env_idx is not None:
+                raise ValueError("env_idx must be None when providing per-env seeds")
+            if len(seed) != self.num:
+                raise ValueError(f"expected {self.num} seeds, got {len(seed)}")
+            for i, s in enumerate(seed):
+                self.call_c_func("set_level_seed", i, int(s), int(reset))
+            return
+        if env_idx is None:
+            env_idx = -1
+        self.call_c_func("set_level_seed", int(env_idx), int(seed), int(reset))
+
+    def seed(self, seed, env_idx: Optional[int] = None):
+        self.set_seed(seed, env_idx=env_idx, reset=False)
 
     def get_combos(self):
         return [
@@ -206,6 +226,7 @@ class ProcgenGym3Env(BaseProcgenEnv):
     """
     gym3 interface for Procgen
     """
+
     def __init__(
         self,
         num,
@@ -237,22 +258,23 @@ class ProcgenGym3Env(BaseProcgenEnv):
             distribution_mode = DISTRIBUTION_MODE_DICT[distribution_mode]
 
         options = {
-                "center_agent": bool(center_agent),
-                "use_generated_assets": bool(use_generated_assets),
-                "use_monochrome_assets": bool(use_monochrome_assets),
-                "restrict_themes": bool(restrict_themes),
-                "use_backgrounds": bool(use_backgrounds),
-                "paint_vel_info": bool(paint_vel_info),
-                "distribution_mode": distribution_mode,
-            }
+            "center_agent": bool(center_agent),
+            "use_generated_assets": bool(use_generated_assets),
+            "use_monochrome_assets": bool(use_monochrome_assets),
+            "restrict_themes": bool(restrict_themes),
+            "use_backgrounds": bool(use_backgrounds),
+            "paint_vel_info": bool(paint_vel_info),
+            "distribution_mode": distribution_mode,
+        }
         super().__init__(num, env_name, options, **kwargs)
-        
-        
+
+
 class ToBaselinesVecEnv(gym3.ToBaselinesVecEnv):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second' : 15
+        'video.frames_per_second': 15
     }
+
     def render(self, mode="human"):
         info = self.env.get_info()[0]
         _, ob, _ = self.env.observe()
@@ -260,7 +282,7 @@ class ToBaselinesVecEnv(gym3.ToBaselinesVecEnv):
             if "rgb" in info:
                 return info["rgb"]
             else:
-                return ob['rgb'][0]        
+                return ob['rgb'][0]
 
 
 def ProcgenEnv(num_envs, env_name, **kwargs):

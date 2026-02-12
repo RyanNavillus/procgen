@@ -94,7 +94,9 @@ void Game::reset() {
     reset_count++;
 
     if (episodes_remaining == 0) {
-        if (options.use_sequential_levels && step_data.level_complete) {
+        if (has_pending_level_seed) {
+            current_level_seed = pending_level_seed;
+        } else if (options.use_sequential_levels && step_data.level_complete) {
             // prevent overflow in seed sequences
             current_level_seed = (int32_t)(current_level_seed + 997);
         } else {
@@ -275,4 +277,6 @@ void Game::deserialize(ReadBuffer *b) {
 
     cur_time = b->read_int();
     is_waiting_for_step = b->read_int();
+    has_pending_level_seed = false;
+    pending_level_seed = 0;
 }
