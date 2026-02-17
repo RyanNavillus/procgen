@@ -275,6 +275,25 @@ class ToBaselinesVecEnv(gym3.ToBaselinesVecEnv):
         'video.frames_per_second': 15
     }
 
+    def seed(self, seeds=None):
+        if seeds is None:
+            return
+        if hasattr(self.env, "set_seed"):
+            self.env.set_seed(seeds, reset=False)
+            return seeds
+        print("Warning: seed ignored")
+
+    def reset(self, seeds=None):
+        if seeds is not None:
+            if hasattr(self.env, "set_seed"):
+                self.env.set_seed(seeds, reset=True)
+            else:
+                print("Warning: seed ignored")
+        return super().reset()
+
+    def reset_with_seeds(self, seeds):
+        return self.reset(seeds=seeds)
+
     def render(self, mode="human"):
         info = self.env.get_info()[0]
         _, ob, _ = self.env.observe()
