@@ -92,16 +92,25 @@ def _attempt_configure(build_type, package):
     check(run(configure_cmd), verbose=package)
 
 
+def _has_lib(lib_dir):
+    return any(
+        os.path.exists(os.path.join(lib_dir, name))
+        for name in ("libenv.so", "libenv.dylib", "env.dll")
+    )
+
+
 def build(package=False, debug=False):
     """
     Build the requested environment in a process-safe manner and only once per process.
     """
     build_dir = os.path.join(SCRIPT_DIR, ".build")
     os.makedirs(build_dir, exist_ok=True)
+    build_type = "debug" if debug else "relwithdebinfo"
+    lib_dir = os.path.join(build_dir, build_type)
 
-    build_type = "relwithdebinfo"
-    if debug:
-        build_type = "debug"
+    if os.environ.get("PROCGEN_FORCE_REBUILD") != "1" and _has_lib(lib_dir):
+        global_builds.add(build_type)
+        return lib_dir
 
     with chdir(build_dir), global_build_lock:
         # check if we have built yet in this process
