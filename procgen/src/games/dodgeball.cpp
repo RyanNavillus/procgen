@@ -464,6 +464,11 @@ class DodgeballGame : public BasicAbstractGame {
         num_enemies = b->read_int();
         enemy_fire_delay = b->read_int();
     }
+
+    void observe() override {
+        Game::observe();
+        *(int32_t *)(info_bufs[info_name_to_offset.at("dodgeball_num_enemies")]) = num_enemies;
+    }
 };
 
 REGISTER_GAME(NAME, DodgeballGame);
